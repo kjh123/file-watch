@@ -2,7 +2,7 @@ package watch
 
 import (
     "file-watch/notify"
-    "github.com/prometheus/common/log"
+    "log"
     "os"
 )
 
@@ -58,7 +58,7 @@ func (w *FileWatch) Logging(str string) {
     if w.LogEnabled {
         f, err := os.OpenFile(w.LogPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
         if err != nil {
-            log.Error(err)
+            log.Println(err)
         }
         defer f.Close()
         
