@@ -26,7 +26,7 @@ func (n *Ngrok) Change(c chan string) {
     
     for {
         if n.ping() {
-            if s, _ := n.status(); s != byte(48) {
+            if s, _ := n.status(); s != "0\n" {
                 continue
             }
             // 通知
@@ -60,15 +60,15 @@ func (n *Ngrok) ping() bool {
     return false
 }
 
-func (n *Ngrok) status() (byte, error) {
+func (n *Ngrok) status() (string, error) {
     var out bytes.Buffer
     cmd := exec.Command("/bin/bash", "-c", "systemctl status ngrok | grep running | wc -l")
     cmd.Stdout = &out
     if err := cmd.Run(); err != nil {
-        return byte(0), errors.Errorf("获取 ngrok 运行状态失败, 错误信息: %v", err)
+        return "", errors.Errorf("获取 ngrok 运行状态失败, 错误信息: %v", err)
     }
     
-    return out.Bytes()[0], nil
+    return out.String(), nil
 }
 
 func (n *Ngrok) newAddress() string {
