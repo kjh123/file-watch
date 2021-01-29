@@ -10,7 +10,7 @@ import (
 
 const (
     version = "v1.0.0"
-    logPath = "/var/log/file-watch.log"
+    logPath = "/var/log/file_watch.log"
 )
 
 var (

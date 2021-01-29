@@ -4,6 +4,7 @@ import (
     "file-watch/notify"
     "log"
     "os"
+    "os/signal"
 )
 
 type File interface {
@@ -31,18 +32,26 @@ func (w *FileWatch) AppendChannel(c notify.Channel) {
 
 func (w *FileWatch) Run() {
     if len(w.Files) == 0 {
+        log.Println("watch files is empty")
         return
     }
     
     c := make(chan string)
+    go w.readChannel(c)
     for _, f := range w.Files {
         go f.Change(c)
     }
     defer close(c)
     
+    quit := make(chan os.Signal)
+    signal.Notify(quit, os.Interrupt)
+    <-quit
+}
+
+func (w *FileWatch) readChannel(c chan string) {
     for {
         select {
-        case str := <-c:
+        case str:= <-c:
             w.Logging(str)
         }
     }
@@ -64,4 +73,6 @@ func (w *FileWatch) Logging(str string) {
         
         f.WriteString(str)
     }
+    
+    log.Println(str)
 }
