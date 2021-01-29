@@ -2,7 +2,7 @@ package watch
 
 import (
     "bytes"
-    "log"
+    "fmt"
     "net/http"
     "os/exec"
     "time"
@@ -25,19 +25,25 @@ func (n *Ngrok) Change(c chan string) {
     
     for {
         if n.ping() {
-            if n.status() == "0" {
-                if err := exec.Command("bash", "-c", "systemctl start ngrok").Run(); err != nil {
-                    log.Printf("启动 ngrok 失败, 错误信息: %v, 正在尝试重启...", err)
-                    if err := exec.Command("bash", "-c", "systemctl restart ngrok").Run(); err != nil {
-                        log.Printf("重启 ngrok 失败, 错误信息: %v", err)
-                        close(c)
-                    }
-                }
-                if newChannel := n.newAddress(); newChannel != "" {
-                    c <- n.newAddress()
+            if s := n.status(); s != "1" {
+                c <- s
+                return
+            }
+    
+            if err := exec.Command("bash", "-c", "systemctl start ngrok").Run(); err != nil {
+                c <- fmt.Sprintf("启动 ngrok 失败, 错误信息: %v, 正在尝试重启...", err)
+                if err := exec.Command("bash", "-c", "systemctl restart ngrok").Run(); err != nil {
+                    c <- fmt.Sprintf("重启 ngrok 失败, 错误信息: %v", err)
+                    close(c)
                 }
             }
+            
+            if newChannel := n.newAddress(); newChannel != "" {
+                c <- n.newAddress()
+            }
+            
         } else {
+            c <- fmt.Sprint("网络连接不可达, 稍后重试")
             time.Sleep(time.Minute)
         }
     }
@@ -58,8 +64,7 @@ func (n *Ngrok) status() string {
     cmd := exec.Command("/bin/bash", "-c", "systemctl status ngrok | grep running | wc -l")
     cmd.Stdout = &out
     if err := cmd.Run(); err != nil {
-        log.Printf("获取 ngrok 运行状态失败, 错误信息: %v", err)
-        return "0"
+        return fmt.Sprintf("获取 ngrok 运行状态失败, 错误信息: %v", err)
     }
     
     return out.String()
@@ -70,8 +75,7 @@ func (n *Ngrok) newAddress() string {
     cmd := exec.Command("/bin/bash", "-c", "grep 'started tunnel' /var/log/ngrok.log | tail -1")
     cmd.Stdout = &out
     if err := cmd.Run(); err != nil {
-        log.Printf("获取 ngrok 最新地址失败, 错误信息: %v", err)
-        return ""
+        return fmt.Sprintf("获取 ngrok 最新地址失败, 错误信息: %v", err)
     }
     
     return out.String()
