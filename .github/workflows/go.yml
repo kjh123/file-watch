@@ -1,4 +1,4 @@
-name: Go
+name: file-watch
 
 on:
   push:
@@ -9,11 +9,12 @@ on:
 jobs:
 
   build:
+    name: build file_watch
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up Go
+    - name: Set up Go v1.15
       uses: actions/setup-go@v2
       with:
         go-version: 1.15
