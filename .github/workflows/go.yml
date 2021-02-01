@@ -7,17 +7,51 @@ on:
     branches: [ master ]
 
 jobs:
-
-  build:
-    name: build file_watch
+  preview:
+    name: preview
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow --tags
+      - uses: snyk/release-notes-preview@v1.6.1
+        with:
+          releaseBranch: master
+        env:
+          GITHUB_PR_USERNAME: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
-    - name: Set up Go v1.15
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.15
+  release-linux-amd64:
+    name: release linux/amd64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: wangyoucao577/go-release-action@v1.14
+        with:
+          github_token: ${{ secrets.ACCESS_TOKEN }}
+          goos: linux
+          goarch: amd64
+          goversion: https://golang.google.cn/dl/go1.15.7.linux-amd64.tar.gz
 
-    - name: Build
-      run: go build -v ./...
+  release-darwin-amd64:
+    name: release darwin/amd64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: wangyoucao577/go-release-action@v1.14
+        with:
+          github_token: ${{ secrets.ACCESS_TOKEN }}
+          goos: darwin
+          goarch: amd64
+          goversion: https://golang.google.cn/dl/go1.15.7.linux-amd64.tar.gz
+
+  release-windows-amd64:
+    name: release windows/amd64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ngs/go-release.action@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          GOARCH: amd64
+          GOOS: windows
