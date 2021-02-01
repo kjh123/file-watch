@@ -33,4 +33,4 @@ jobs:
           goarch: ${{ matrix.goarch }}
           md5sum: false
           overwrite: true
-          asset_name: ${BINARY_NAME}-${GOOS}-${GOARCH}
+          asset_name: "file-watch-${{ matrix.goos }}-${{ matrix.goarch }}"
