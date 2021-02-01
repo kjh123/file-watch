@@ -1,8 +1,6 @@
 name: file-watch
 
 on:
-  push:
-    branches: [ master ]
   release:
     types: [ created ]
 
@@ -12,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # build and publish in parallel: linux/386, linux/amd64, windows/386, windows/amd64, darwin/386, darwin/amd64
-        goos: [ linux, windows, darwin, freebsd ]
+        # build and publish in parallel: linux/386, linux/amd64, darwin/386, darwin/amd64
+        goos: [ linux, darwin, freebsd ]
         goarch: [ amd64, arm ]
         exclude:
           - goarch: arm
@@ -33,6 +31,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
-          release_tag: v1.0.0
           overwrite: true
-          build_flags: -tags 5BytesOffset # optional, default is
