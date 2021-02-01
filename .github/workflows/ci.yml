@@ -11,8 +11,8 @@ jobs:
     strategy:
       matrix:
         # build and publish in parallel: linux/386, linux/amd64, darwin/386, darwin/amd64
-        goos: [ linux, darwin, freebsd ]
-        goarch: [ amd64, arm ]
+        goos: [ linux, darwin ]
+        goarch: [ "386", amd64, arm ]
         exclude:
           - goarch: arm
             goos: darwin
@@ -31,4 +31,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
+          md5sum: false
           overwrite: true
+          asset_name: ${BINARY_NAME}-${GOOS}-${GOARCH}
