@@ -1,8 +1,8 @@
-name: file-watch
+name: file-watch-ci
 
 on:
   release:
-    types: [ created ]
+    types: [ created, edited, prereleased ]
 
 jobs:
   build:
