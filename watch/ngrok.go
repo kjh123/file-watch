@@ -2,6 +2,7 @@ package watch
 
 import (
     "bytes"
+    "file-watch/message"
     "fmt"
     "github.com/pkg/errors"
     "net/http"
@@ -14,13 +15,13 @@ type Ngrok struct {
     FilePath string
 }
 
-func (n *Ngrok) Change(c chan string) {
+func (n *Ngrok) Change(c chan message.Message) {
     if n.Name == "" {
         n.Name = "ngrok"
     }
     
     if n.FilePath == "" {
-        c <- n.Name + " 文件未找到"
+        c <- message.NewMessage(n.Name + " 文件未找到", message.Debug | message.Error)
         return
     }
     
@@ -30,21 +31,21 @@ func (n *Ngrok) Change(c chan string) {
                 continue
             }
             // 通知
-            c <- "准备启动 ngrok"
+            c <- message.NewMessage("准备启动" + n.Name, message.Debug | message.Info)
             if err := exec.Command("bash", "-c", "systemctl start ngrok").Run(); err != nil {
-                c <- fmt.Sprintf("启动 ngrok 失败, 错误信息: %v, 正在尝试重启...", err)
+                c <- message.NewMessage(fmt.Sprintf("启动 " + n.Name + " 失败, 错误信息: %v, 正在尝试重启...", err), message.Debug | message.Error)
                 if err := exec.Command("bash", "-c", "systemctl restart ngrok").Run(); err != nil {
-                    c <- fmt.Sprintf("重启 ngrok 失败, 错误信息: %v", err)
+                    c <- message.NewMessage(fmt.Sprintf("重启 " + n.Name + " 失败, 错误信息: %v, 正在尝试重启...", err), message.Debug | message.Error)
                     close(c)
                 }
             }
 
             if newChannel := n.newAddress(); newChannel != "" {
-                c <- newChannel
+                c <- message.NewMessage(newChannel, message.Debug | message.Info)
             }
             
         } else {
-            c <- fmt.Sprint("网络连接不可达, 稍后重试")
+            c <- message.NewMessage("网络连接不可达, 稍后重试", message.Debug)
             time.Sleep(time.Minute)
         }
     }

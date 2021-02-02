@@ -1,6 +1,7 @@
 package main
 
 import (
+    "file-watch/message"
     "file-watch/notify"
     "file-watch/watch"
     "fmt"
@@ -9,13 +10,12 @@ import (
 )
 
 const (
-    version = "v1.0.0"
-    logPath = "/var/log/file_watch.log"
+    version = "v1.1.0"
 )
 
 var (
+    LogPath        string
     NgrokLogPath   string
-    LogEnabled     bool
     NotifyDingPath string
 )
 
@@ -26,38 +26,18 @@ func main() {
         UseShortOptionHandling: true,
         HideHelpCommand:        true,
         Version:                version,
-        Flags: []cli.Flag{
-            &cli.BoolFlag{
-                Name:        "log",
-                Destination: &LogEnabled,
-                Value:       true,
-                Usage:       "是否记录文件变动到日志",
-            },
-            &cli.StringFlag{
-                Name:        "ding_url",
-                Destination: &NotifyDingPath,
-                EnvVars:     []string{"DING_URL"},
-                Usage:       "钉钉消息通知",
-            },
-            &cli.StringFlag{
-                Name:        "ngrok_log_path",
-                EnvVars:     []string{"NGROK_LOG_PATH"},
-                Destination: &NgrokLogPath,
-                Usage:       "Ngrok 日志文件路径",
-            },
-        },
+        Flags: getArgs(),
         Action: func(c *cli.Context) error {
             w := watch.FileWatch{
                 Channels: []notify.Channel{
-                    &notify.DingDing{Url: NotifyDingPath},
+                    &notify.DingDing{Url: NotifyDingPath, Level: message.Debug | message.Info},
                     // TODO Email
                     // &notify.Email{Account: "", Password: ""},
                 },
                 Files: []watch.File{
                     &watch.Ngrok{FilePath: NgrokLogPath},
                 },
-                LogEnabled: LogEnabled,
-                LogPath:    logPath,
+                LogPath:    LogPath,
             }
             w.Run()
             return nil
@@ -66,5 +46,30 @@ func main() {
     
     if err := app.Run(os.Args); err != nil {
         fmt.Println(err)
+    }
+}
+
+// getArgs run command with arguments
+func getArgs() []cli.Flag {
+    return []cli.Flag{
+        &cli.StringFlag{
+            Name:        "ding_url",
+            Destination: &NotifyDingPath,
+            EnvVars:     []string{"DING_URL"},
+            Usage:       "钉钉消息通知",
+        },
+        &cli.StringFlag{
+            Name:        "log",
+            Destination: &LogPath,
+            EnvVars:     []string{"LOG"},
+            Value:       "/var/log/file_watch.log",
+            Usage:       "是否记录文件变动到日志, 默认记录到 /var/log/file_watch.log",
+        },
+        &cli.StringFlag{
+            Name:        "ngrok_log_path",
+            EnvVars:     []string{"NGROK_LOG_PATH"},
+            Destination: &NgrokLogPath,
+            Usage:       "Ngrok 日志文件路径",
+        },
     }
 }

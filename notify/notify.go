@@ -1,5 +1,8 @@
 package notify
 
+import "file-watch/message"
+
 type Channel interface {
-    Notify()
+    NotifyLevel() message.MsgLevel
+    Notify(msg message.Message)
 }

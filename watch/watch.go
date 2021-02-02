@@ -1,6 +1,7 @@
 package watch
 
 import (
+    "file-watch/message"
     "file-watch/notify"
     "log"
     "os"
@@ -8,22 +9,17 @@ import (
 )
 
 type File interface {
-    Change(chan string)
+    Change(chan message.Message)
 }
 
 type FileWatch struct {
     Channels   []notify.Channel
     Files      []File
-    LogEnabled bool
     LogPath    string
 }
 
 func (w *FileWatch) HasChanged() bool {
     return false
-}
-
-func (w *FileWatch) SetLogEnabled(enabled bool) {
-    w.LogEnabled = enabled
 }
 
 func (w *FileWatch) AppendChannel(c notify.Channel) {
@@ -36,7 +32,7 @@ func (w *FileWatch) Run() {
         return
     }
     
-    c := make(chan string)
+    c := make(chan message.Message)
     go w.readChannel(c)
     for _, f := range w.Files {
         go f.Change(c)
@@ -48,34 +44,35 @@ func (w *FileWatch) Run() {
     <-quit
 }
 
-func (w *FileWatch) readChannel(c chan string) {
+func (w *FileWatch) readChannel(c chan message.Message) {
     for {
         select {
-        case str, ok := <-c:
+        case msg, ok := <-c:
             if ok {
-                w.Logging(str)
+                w.Logging(msg)
             }
             
         }
     }
 }
 
-func (w *FileWatch) Logging(str string) {
-    if len(w.Channels) > 0 {
-        for _, c := range w.Channels {
-            c.Notify()
+func (w *FileWatch) Logging(msg message.Message) {
+    // Stdout
+    log.Println(msg.String())
+    
+    for _, c := range w.Channels {
+        if c.NotifyLevel() & msg.Level != 0 {
+            go c.Notify(msg)
         }
     }
     
-    if w.LogEnabled {
+    if len(w.LogPath) > 0 {
         f, err := os.OpenFile(w.LogPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
         if err != nil {
             log.Println(err)
         }
         defer f.Close()
         
-        f.WriteString(str)
+        f.WriteString(msg.String())
     }
-    
-    log.Println(str)
 }
