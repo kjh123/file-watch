@@ -26,26 +26,32 @@ func main() {
         UseShortOptionHandling: true,
         HideHelpCommand:        true,
         Version:                version,
-        Flags: getArgs(),
-        Action: func(c *cli.Context) error {
-            w := watch.FileWatch{
-                Channels: []notify.Channel{
-                    &notify.DingDing{Url: NotifyDingPath, Level: message.Debug | message.Info},
-                    // TODO Email
-                    // &notify.Email{Account: "", Password: ""},
-                },
-                Files: []watch.File{
-                    &watch.Ngrok{FilePath: NgrokLogPath},
-                },
-                LogPath:    LogPath,
-            }
-            w.Run()
-            return nil
-        },
+        Flags:                  getArgs(),
+        Action:                 watching(),
     }
     
     if err := app.Run(os.Args); err != nil {
         fmt.Println(err)
+    }
+}
+
+func watching() cli.ActionFunc {
+    return func(c *cli.Context) error {
+        
+        w := watch.FileWatch{
+            Channels: []notify.Channel{
+                &notify.DingDing{Url: NotifyDingPath, Level: message.Debug | message.Info},
+                &notify.Log{LogPath: LogPath, Level: message.Debug | message.Info | message.Error},
+                // TODO Email
+                // &notify.Email{Account: "", Password: ""},
+            },
+            Files: []watch.File{
+                &watch.Files{Files: c.Args().Slice()},
+                &watch.Ngrok{FilePath: NgrokLogPath},
+            },
+        }
+        w.Run()
+        return nil
     }
 }
 
@@ -63,7 +69,7 @@ func getArgs() []cli.Flag {
             Destination: &LogPath,
             EnvVars:     []string{"LOG"},
             Value:       "/var/log/file_watch.log",
-            Usage:       "是否记录文件变动到日志, 默认记录到 /var/log/file_watch.log",
+            Usage:       "是否记录文件变动到日志",
         },
         &cli.StringFlag{
             Name:        "ngrok_log_path",

@@ -21,7 +21,7 @@ func (n *Ngrok) Change(c chan message.Message) {
     }
     
     if n.FilePath == "" {
-        c <- message.NewMessage(n.Name + " 文件未找到", message.Debug | message.Error)
+        c <- message.NewMessage(n.Name + " 日志文件未找到, 跳过", message.Debug)
         return
     }
     
@@ -34,6 +34,7 @@ func (n *Ngrok) Change(c chan message.Message) {
             c <- message.NewMessage("准备启动" + n.Name, message.Debug | message.Info)
             if err := exec.Command("bash", "-c", "systemctl start ngrok").Run(); err != nil {
                 c <- message.NewMessage(fmt.Sprintf("启动 " + n.Name + " 失败, 错误信息: %v, 正在尝试重启...", err), message.Debug | message.Error)
+                
                 if err := exec.Command("bash", "-c", "systemctl restart ngrok").Run(); err != nil {
                     c <- message.NewMessage(fmt.Sprintf("重启 " + n.Name + " 失败, 错误信息: %v, 正在尝试重启...", err), message.Debug | message.Error)
                     close(c)
@@ -74,7 +75,7 @@ func (n *Ngrok) status() (string, error) {
 
 func (n *Ngrok) newAddress() string {
     var out bytes.Buffer
-    cmd := exec.Command("/bin/bash", "-c", "grep 'started tunnel' /var/log/ngrok.log | tail -1")
+    cmd := exec.Command("/bin/bash", "-c", "grep 'started tunnel' " + n.FilePath + " | tail -1")
     cmd.Stdout = &out
     if err := cmd.Run(); err != nil {
         return fmt.Sprintf("获取 ngrok 最新地址失败, 错误信息: %v", err)

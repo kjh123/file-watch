@@ -15,15 +15,18 @@ type File interface {
 type FileWatch struct {
     Channels   []notify.Channel
     Files      []File
-    LogPath    string
 }
 
-func (w *FileWatch) HasChanged() bool {
-    return false
+func NewFileWatch() *FileWatch {
+    return &FileWatch{}
 }
 
-func (w *FileWatch) AppendChannel(c notify.Channel) {
-    w.Channels = append(w.Channels, c)
+func (w *FileWatch) AppendFiles(f ...File) {
+    w.Files = append(w.Files, f...)
+}
+
+func (w *FileWatch) AppendChannel(c ...notify.Channel) {
+    w.Channels = append(w.Channels, c...)
 }
 
 func (w *FileWatch) Run() {
@@ -33,7 +36,7 @@ func (w *FileWatch) Run() {
     }
     
     c := make(chan message.Message)
-    go w.readChannel(c)
+    go w.logging(c)
     for _, f := range w.Files {
         go f.Change(c)
     }
@@ -44,35 +47,21 @@ func (w *FileWatch) Run() {
     <-quit
 }
 
-func (w *FileWatch) readChannel(c chan message.Message) {
+// logging WriteString message.
+func (w *FileWatch) logging(c chan message.Message) {
     for {
         select {
         case msg, ok := <-c:
             if ok {
-                w.Logging(msg)
+                log.Println(msg.String())
+        
+                for _, c := range w.Channels {
+                    if c.NotifyLevel()&msg.Level != 0 {
+                        go c.Notify(msg)
+                    }
+                }
             }
             
         }
-    }
-}
-
-func (w *FileWatch) Logging(msg message.Message) {
-    // Stdout
-    log.Println(msg.String())
-    
-    for _, c := range w.Channels {
-        if c.NotifyLevel() & msg.Level != 0 {
-            go c.Notify(msg)
-        }
-    }
-    
-    if len(w.LogPath) > 0 {
-        f, err := os.OpenFile(w.LogPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
-        if err != nil {
-            log.Println(err)
-        }
-        defer f.Close()
-        
-        f.WriteString(msg.String())
     }
 }
