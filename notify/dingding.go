@@ -14,8 +14,9 @@ import (
 var appName = "file-watch"
 
 type DingDing struct {
-    Url   string
-    Level message.MsgLevel
+    Url      string
+    Level    message.MsgLevel
+    hasError bool
 }
 
 func (d *DingDing) NotifyLevel() message.MsgLevel {
@@ -23,6 +24,10 @@ func (d *DingDing) NotifyLevel() message.MsgLevel {
 }
 
 func (d *DingDing) Notify(msg message.Message) {
+    if d.hasError {
+        return
+    }
+    
     if u, err := url.Parse(d.Url); (u != nil && u.String() == "") || err != nil {
         d.err("please check ding notify url")
         return
@@ -51,7 +56,12 @@ func (d *DingDing) Notify(msg message.Message) {
 }
 
 func (d *DingDing) err(str string) {
+    d.hasError = true
     log.Println("ding notify: " + str)
+}
+
+func (d *DingDing) HasError() bool {
+    return d.hasError
 }
 
 type dingMsg struct {

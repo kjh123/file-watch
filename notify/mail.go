@@ -15,3 +15,7 @@ func (m *Email) Notify(msg message.Message) {
 func (m *Email) NotifyLevel() message.MsgLevel {
     return m.Level
 }
+
+func (m *Email) HasError() bool {
+    return false
+}

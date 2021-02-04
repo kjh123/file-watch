@@ -56,7 +56,7 @@ func (w *FileWatch) logging(c chan message.Message) {
                 log.Println(msg.String())
         
                 for _, c := range w.Channels {
-                    if c.NotifyLevel()&msg.Level != 0 {
+                    if !c.HasError() && c.NotifyLevel()&msg.Level != 0 {
                         go c.Notify(msg)
                     }
                 }

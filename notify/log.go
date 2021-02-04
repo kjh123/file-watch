@@ -7,8 +7,9 @@ import (
 )
 
 type Log struct {
-    LogPath string
-    Level   message.MsgLevel
+    LogPath  string
+    Level    message.MsgLevel
+    hasError bool
 }
 
 func (l *Log) NotifyLevel() message.MsgLevel {
@@ -23,13 +24,18 @@ func (l *Log) Notify(msg message.Message) {
             return
         }
         defer f.Close()
-    
+        
         l := log.New(f, "", log.LstdFlags)
         l.Println(msg.String())
     }
     
 }
 
-func (l *Log) err (str string) {
+func (l *Log) err(str string) {
+    l.hasError = true
     log.Println("log error: " + str)
+}
+
+func (l *Log) HasError() bool {
+    return l.hasError
 }
